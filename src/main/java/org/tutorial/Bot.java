@@ -3,36 +3,73 @@ package org.tutorial;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-public class Bot  extends TelegramLongPollingBot {
-    @Override
-    public String getBotUsername() {
-        return "BotTest";
+import java.util.List;
+import java.util.Objects;
+
+public class Bot extends TelegramLongPollingBot {
+    InlineKeyboardButton show;
+    InlineKeyboardButton add;
+    private final InlineKeyboardMarkup keyboardMarkup;
+
+    public Bot(String botToken) {
+        super(botToken);
+
+        this.show = InlineKeyboardButton.builder()
+                .text("Показать, кто уже записан")
+                .callbackData("show")
+                .build();
+
+        this.add = InlineKeyboardButton.builder()
+                .text("Записаться в волонтеры")
+                .callbackData("next")
+                .build();
+
+        keyboardMarkup = InlineKeyboardMarkup.builder()
+                .keyboardRow(List.of(show, add))
+                .build();
     }
 
     @Override
-    public String getBotToken() {
-        return "6498565786:AAGkNrdCD0xQhj15UutY6LQovc3IVYMB8CM";
-//        In the future, you should consider storing your token in a dedicated settings file
-//        or in environment variables. Keeping it in the code is fine for the scope of this tutorial,
-//        however, it's not very versatile and is generally considered bad practice.
+    public String getBotUsername() {
+        return "noir74_bot";
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-        var msg = update.getMessage();
-        var user = msg.getFrom();
+        var userId = !Objects.isNull(update.getCallbackQuery()) ? update.getCallbackQuery().getFrom().getId() : update.getMessage().getFrom().getId();
+        var buttonName = !Objects.isNull(update.getCallbackQuery()) ? update.getCallbackQuery().getData() : null;
 
-        System.out.println(user.getFirstName() + " wrote " + msg.getText());
+        if (!Objects.isNull(buttonName))
+            sendText(userId, buttonName);
+
+        sendMenu(userId, "Выберите действие", keyboardMarkup);
     }
 
-    public void sendText(Long who, String what){
-        SendMessage sm = SendMessage.builder()
-            .chatId(who.toString()) //Who are we sending a message to
-            .text(what).build();    //Message content
+    public void sendMenu(Long userId, String text, InlineKeyboardMarkup kb) {
+        SendMessage message = SendMessage.builder()
+                .chatId(userId.toString())
+                .parseMode("HTML")
+                .text(text)
+                .replyMarkup(kb)
+                .build();
+
         try {
-            execute(sm);                        //Actually sending the message
+            execute(message);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void sendText(Long userId, String text) {
+        SendMessage message = SendMessage.builder()
+                .chatId(userId.toString()) //Who are we sending a message to
+                .text(text).build();    //Message content
+        try {
+            execute(message);                        //Actually sending the message
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);      //Any error will be printed here
         }
