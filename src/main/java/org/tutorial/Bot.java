@@ -11,12 +11,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class Bot extends TelegramLongPollingBot {
+    private final String botName;
     InlineKeyboardButton show;
     InlineKeyboardButton add;
     private final InlineKeyboardMarkup keyboardMarkup;
 
-    public Bot(String botToken) {
+    public Bot(String botName, String botToken) {
         super(botToken);
+        this.botName = botName;
 
         this.show = InlineKeyboardButton.builder()
                 .text("Показать, кто уже записан")
@@ -35,7 +37,7 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "noir74_bot";
+        return botName;
     }
 
     @Override
